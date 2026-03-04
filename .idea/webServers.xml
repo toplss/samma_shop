@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="536f8d94-77ee-4ec2-89b7-1b55cf5f0ec7" name="samma_renew" url="https://xn--hz2bqq88l.com/">
+        <fileTransfer rootFolder="/home/samma_renew/www" accessType="SFTP" host="175.126.146.188" port="22" sshConfigId="d49814d8-d257-4da3-a686-cb10a18c1a59" sshConfig="samma_renew">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

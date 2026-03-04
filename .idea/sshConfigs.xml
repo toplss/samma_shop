@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig authType="PASSWORD" connectionConfig="{&quot;serverAliveInterval&quot;:300}" host="175.126.146.188" id="d49814d8-d257-4da3-a686-cb10a18c1a59" port="22" customName="samma_renew" nameFormat="CUSTOM" username="root" useOpenSSHConfig="true">
+        <option name="customName" value="samma_renew" />
+      </sshConfig>
+    </configs>
+  </component>
+</project>
