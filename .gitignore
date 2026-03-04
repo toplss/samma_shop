@@ -4,4 +4,4 @@
 /storage/*.key
 .env
 .phpunit.result.cache
-.histroy
+.history/
