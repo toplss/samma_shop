@@ -124,7 +124,7 @@ return [
     'cipher' => 'AES-256-CBC',
 
 
-    'slow_query_log'  => env('SLOW_QUERY_LOG', false),
+    'slow_query_log'  => env('SLOW_QUERY_LOG', true),
     'slow_query_time' => env('SLOW_QUERY_TIME', 500),
 
 

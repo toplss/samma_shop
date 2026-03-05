@@ -149,6 +149,8 @@ class ShopOrderModel extends Model
         'pt_sales',
         'pt_delivery',
         'pt_sales_delivery',
+        'pt_charge',
+        'pt_reserve',
         'pt_subtotal',
         'pt_cur_charge',
         'pt_cur_reserve',

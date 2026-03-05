@@ -146,11 +146,21 @@ class PaymentController extends Controller
             $goodname = $firstName;
         }
 
+        // 주문번호로 총 결제금액 조회
+        $total = DB::table('g5_shop_cart')
+        ->where('od_id', $orderNo)
+        ->selectRaw('SUM(ct_price * ct_qty) as total')
+        ->value('total');
+
+        if ($total <= 0) {
+            return redirect()->route('/')->with('error', '주문금액이 올바르지 않습니다.');
+        }
+
         
         $inicis = new InicisService();
         $payData = $inicis->makePaymentData([
             'od_id'    => $orderNo,
-            'price'    => $orderInfo['total_amount'],
+            'price'    => $total,
             'is_mobile'=> $isMobile,
             'buyer_name'  => $memberInfo['mb_company'],
             'buyer_email' => $memberInfo['mb_email'],

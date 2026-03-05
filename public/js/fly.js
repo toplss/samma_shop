@@ -70,10 +70,12 @@ function flyToElement(flyer, flyingTo, e) {
 // 실행
 $(document).ready(function () {
 	$('.add-to-cart').on('click', function (e) {
-		var itemImg = $(this)
-			.closest('.prd-box')
-			.find('.prd-img img')
-			.eq(0);
-		flyToElement(itemImg, $('.cart_cnt'), e);
+		const $box = $(this).closest('.prd-box');
+    const isSoldOut = $box.find('.prd-img').hasClass('sold-out');
+
+		// 품절일땐 액션x
+		if (isSoldOut) return;
+
+		flyToElement($box.find('.prd-img img').eq(0),$('.cart_cnt'),e);
 	});
 });

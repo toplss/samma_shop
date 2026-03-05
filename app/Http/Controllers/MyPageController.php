@@ -80,8 +80,9 @@ class MyPageController extends Controller
                                         WHEN '반품'     THEN 3
                                         WHEN '반품채권' THEN 4
                                         WHEN '결품'     THEN 5
-                                        WHEN '기사파손' THEN 6
-                                        WHEN '물류파손' THEN 7
+                                        WHEN '결품입금' THEN 6
+                                        WHEN '기사파손' THEN 7
+                                        WHEN '물류파손' THEN 8
                                     END
                             ) AS row_num
                         ")
@@ -109,8 +110,9 @@ class MyPageController extends Controller
                                     IF(so.pt_sales_delivery > 0, '매출', NULL),
                                     IF(so.pt_cancel > 0, '취소', NULL),
                                     IF(so.pt_return > 0, '반품', NULL),
-                                    IF(so.pt_return_receivable > 0, '반품', NULL),
+                                    IF(so.pt_return_receivable > 0, '반품채권', NULL),
                                     IF(so.pt_outofstock > 0, '결품', NULL),
+                                    IF(so.pt_outofstock_deposit > 0, '결품채권', NULL),
                                     IF(so.pt_damage_staff > 0, '기사파손', NULL),
                                     IF(so.pt_damage_logistic > 0, '물류파손', NULL),
                                     IF(so.od_delivery_step = 8, '잔액이관', NULL)
@@ -215,8 +217,9 @@ class MyPageController extends Controller
                                     IF(so.pt_sales_delivery > 0, '매출', NULL),
                                     IF(so.pt_cancel > 0, '취소', NULL),
                                     IF(so.pt_return > 0, '반품', NULL),
-                                    IF(so.pt_return_receivable > 0, '반품', NULL),
+                                    IF(so.pt_return_receivable > 0, '반품채권', NULL),
                                     IF(so.pt_outofstock > 0, '결품', NULL),
+                                    IF(so.pt_outofstock_deposit > 0, '결품채권', NULL),
                                     IF(so.pt_damage_staff > 0, '기사파손', NULL),
                                     IF(so.pt_damage_logistic > 0, '물류파손', NULL),
                                     IF(so.od_delivery_step = 8, '잔액이관', NULL)
@@ -304,8 +307,9 @@ class MyPageController extends Controller
                                         WHEN '반품'     THEN 3
                                         WHEN '반품채권' THEN 4
                                         WHEN '결품'     THEN 5
-                                        WHEN '기사파손' THEN 6
-                                        WHEN '물류파손' THEN 7
+                                        WHEN '결품입금' THEN 6
+                                        WHEN '기사파손' THEN 7
+                                        WHEN '물류파손' THEN 8
                                     END
                             ) AS row_num
                         ")
@@ -372,8 +376,9 @@ class MyPageController extends Controller
                                     IF(pt_sales_delivery > 0, '매출', NULL),
                                     IF(pt_cancel > 0, '취소', NULL),
                                     IF(pt_return > 0, '반품', NULL),
-                                    IF(pt_return_receivable > 0, '반품', NULL),
+                                    IF(pt_return_receivable > 0, '반품채권', NULL),
                                     IF(pt_outofstock > 0, '결품', NULL),
+                                    IF(pt_outofstock_deposit > 0, '결품채권', NULL),
                                     IF(pt_damage_staff > 0, '기사파손', NULL),
                                     IF(pt_damage_logistic > 0, '물류파손', NULL),
                                     IF(od_delivery_step = 8, '잔액이관', NULL)
@@ -431,13 +436,14 @@ class MyPageController extends Controller
                 ->join('g5_shop_item as si', 'sc.it_id', 'si.it_id')
                 ->orderByRaw("
                     CASE sc.ct_cate
-                        WHEN '납품' THEN 1
-                        WHEN '취소' THEN 2
-                        WHEN '반품' THEN 3
+                        WHEN '납품'     THEN 1
+                        WHEN '취소'     THEN 2
+                        WHEN '반품'     THEN 3
                         WHEN '반품채권' THEN 4
-                        WHEN '결품' THEN 5
-                        WHEN '기사파손' THEN 6
-                        WHEN '물류파손' THEN 7
+                        WHEN '결품'     THEN 5
+                        WHEN '결품입금' THEN 6
+                        WHEN '기사파손' THEN 7
+                        WHEN '물류파손' THEN 8
                         ELSE 99
                     END
                 ")
@@ -585,7 +591,7 @@ class MyPageController extends Controller
                 DB::raw('null as pt_buy_charge'),
                 DB::raw('null as pt_charge'),
                 DB::raw('null as od_temp_point'),
-                'po_point as change_point',
+                DB::raw('ABS(po_point) as change_point'),
                 DB::raw('null as pt_cur_charge'),
                 'po_current_point',
                 DB::raw('case when po_current_point > 0 then po_current_point end as current_point'),
@@ -598,6 +604,7 @@ class MyPageController extends Controller
             ->when($start_date && $end_date, function ($query) use ($start_date, $end_date) {
                 $query->whereBetween(DB::raw('DATE(created_at)'), [$start_date, $end_date]);
             });
+
 
         /*
         |--------------------------------------------------------------------------
@@ -612,11 +619,18 @@ class MyPageController extends Controller
                 'od_delivery_step',
                 DB::raw("
                     case
-                        when pt_charge > 0 then 'increase'
+                        when pt_charge > 0 then 'decrease'
                         when pt_buy_charge > 0 and od_delivery_step = 8 then 'increase'
                     end as po_point_type
                 "),
-                DB::raw('null as po_action'),
+
+                DB::raw("
+                    CONCAT_WS('#',
+                        IF(pt_charge > 0, 'pt_charge', NULL),
+                        IF(pt_buy_charge > 0 AND od_delivery_step = 8, 'modify', NULL)
+                    ) as po_action
+                "),
+
                 DB::raw('null as po_point'),
                 'pt_buy_charge',
                 'pt_charge',
@@ -637,14 +651,13 @@ class MyPageController extends Controller
                 "),
                 DB::raw('null as po_comment'),
                 DB::raw('null as po_path'),
-                'order_date as reg_date',
+                'od_delivery_date as reg_date',
             ])
             ->where('mb_code', $mb_code)
             ->where(function ($q) {
-                $q->where('pt_charge', '>', 0)
-                ->orWhere(function ($sub) {
-                    $sub->where('pt_buy_charge', '>', 0)
-                        ->where('od_delivery_step', 8);
+                $q->where(function ($q2) {
+                    $q2->where('pt_buy_charge', '>', 0)
+                    ->where('od_delivery_step', 8);
                 });
             })
             ->where('od_delivery_step', '>', 0)
@@ -791,19 +804,21 @@ class MyPageController extends Controller
                 'po_fk as od_id',
                 DB::raw('null as od_delivery_step'),
                 'po_point_type',
-                'po_action',
+                DB::raw('CASE WHEN po_comment LIKE "%주문 삭제" THEN "od_del" ELSE po_action END as po_action'),
                 'po_point',
                 DB::raw('null as pt_buy_reserve'),
                 DB::raw('null as pt_reserve'),
                 DB::raw('null as pt_cancel'),
                 DB::raw('null as pt_return'),
+                DB::raw('null as pt_return_receivable'),
                 DB::raw('null as pt_outofstock'),
+                DB::raw('null as pt_outofstock_deposit'),
                 DB::raw('null as pt_damage_staff'),
                 DB::raw('null as pt_damage_logistic'),
                 DB::raw('null as pt_incentive'),
                 DB::raw('null as pt_dc'),
                 DB::raw('null as od_temp_point_reserve'),
-                DB::raw('po_point as change_point'),
+                DB::raw('ABS(po_point) as change_point'),                
                 DB::raw('null as pt_subtotal'),
                 DB::raw('null as pt_cur_reserve'),
                 'po_current_point',
@@ -813,7 +828,6 @@ class MyPageController extends Controller
             ])
             ->where('po_mb_code', $mb_code)
             ->where('po_gubun', 'RESERVE')
-            ->where('po_path', 'mall')
             ->when($start_date && $end_date, function ($query) use ($start_date, $end_date) {
                 $query->whereBetween(DB::raw('DATE(created_at)'), [$start_date, $end_date]);
             });
@@ -837,7 +851,9 @@ class MyPageController extends Controller
                         WHEN pt_buy_reserve > 0 THEN 'increase'
                         WHEN pt_cancel > 0 THEN 'increase'
                         WHEN pt_return > 0 THEN 'increase'
+                        WHEN pt_return_receivable > 0 THEN 'bond'
                         WHEN pt_outofstock > 0 THEN 'increase'
+                        WHEN pt_outofstock_deposit > 0 THEN 'bond'
                         WHEN pt_damage_staff > 0 THEN 'increase'
                         WHEN pt_damage_logistic > 0 THEN 'increase'
                         WHEN pt_incentive > 0 THEN 'increase'
@@ -852,7 +868,9 @@ class MyPageController extends Controller
                         IF(pt_buy_reserve > 0 AND od_delivery_step <> 8, 'pt_buy_reserve', NULL),
                         IF(pt_cancel > 0, 'pt_cancel', NULL),
                         IF(pt_return > 0, 'pt_return', NULL),
+                        IF(pt_return_receivable > 0, 'pt_return_receivable', NULL),
                         IF(pt_outofstock > 0, 'pt_outofstock', NULL),
+                        IF(pt_outofstock_deposit > 0, 'pt_outofstock_deposit', NULL),
                         IF(pt_damage_staff > 0, 'pt_damage_staff', NULL),
                         IF(pt_damage_logistic > 0, 'pt_damage_logistic', NULL),
                         IF(pt_incentive > 0, 'pt_incentive', NULL),
@@ -866,7 +884,9 @@ class MyPageController extends Controller
                 'pt_reserve',
                 'pt_cancel',
                 'pt_return',
+                'pt_return_receivable',
                 'pt_outofstock',
+                'pt_outofstock_deposit',
                 'pt_damage_staff',
                 'pt_damage_logistic',
                 'pt_incentive',
@@ -877,6 +897,8 @@ class MyPageController extends Controller
                     CASE
                         WHEN pt_reserve > 0 THEN pt_reserve
                         WHEN pt_buy_reserve > 0 THEN pt_buy_reserve
+                        WHEN pt_incentive > 0 THEN pt_incentive
+                        WHEN pt_dc > 0 THEN pt_dc
                         WHEN ABS(pt_subtotal) > 0 THEN ABS(pt_subtotal)
                     END as change_point
                 "),
@@ -889,19 +911,17 @@ class MyPageController extends Controller
                 'od_delivery_date as reg_date'
             ])
             ->where('mb_code', $mb_code)
-            ->where('od_delivery_step', '>', 0)
             ->where(function ($q) {
-                $q->where('pt_reserve', '>', 0)
-                ->orWhere('pt_buy_reserve', '>', 0)
-                ->orWhere('pt_cancel', '>', 0)
+                $q->Where('pt_cancel', '>', 0)
                 ->orWhere('pt_return', '>', 0)
+                ->orWhere('pt_return_receivable', '>', 0)
                 ->orWhere('pt_outofstock', '>', 0)
+                ->orWhere('pt_outofstock_deposit', '>', 0)
                 ->orWhere('pt_damage_staff', '>', 0)
                 ->orWhere('pt_damage_logistic', '>', 0)
                 ->orWhere('pt_incentive', '>', 0)
                 ->orWhere('pt_dc', '>', 0);
             })
-            ->where('od_delivery_step', '>', 0)
             ->when($start_date && $end_date, function ($query) use ($start_date, $end_date) {
                 $query->whereBetween(DB::raw('DATE(order_date)'), [$start_date, $end_date]);
             });
@@ -1000,6 +1020,51 @@ class MyPageController extends Controller
             // 'carry_balance' => $carry_balance,
         ]);
     }
+
+
+    /**
+     * method Name : MyPointReserve
+     * Description : 적립금내역
+     * Author : Kim Hairyong 
+     * Created Date : 2026-02-14
+     * Params : Params
+     * History :
+     *   - 2026-02-14 : Initial creation
+     */
+    public function MyPointReserveDetailPop(Request $request)
+    {
+        $od_id = $request->get('od_id');
+
+        $result = DB::table('g5_shop_cart')
+            ->selectRaw('ct_cate, count(*) as cnt, sum(pt_sales) as sum_pt_sales')
+            ->where('od_id', '20260305134043701539')
+            ->groupBy('ct_cate')
+            ->orderByDesc('cnt')
+            ->get();  
+
+        $items = DB::table('g5_shop_cart as sc')
+            ->join('g5_shop_item as si', 'sc.it_id', '=', 'si.it_id')
+            ->select(
+                'sc.it_id',
+                'sc.it_name',
+                'sc.ct_cate',
+                'sc.it_gubun',
+                'sc.ct_qty',
+                'sc.ct_qty_tot',
+                'sc.pt_sales',
+                'si.it_img1',
+                'si.it_basic'
+            )
+            ->where('sc.od_id', $od_id)
+            ->where('sc.ct_cate', '<>', '납품')
+            ->get();
+
+        return view('mypage.my_point_reserve_detail_pop', [
+            'result' => $result,
+            'items' => $items,
+        ]);        
+    }
+
 
 
     /**

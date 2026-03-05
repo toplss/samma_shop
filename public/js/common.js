@@ -187,8 +187,10 @@ $(document).ready(function(){
     );
   }
   setCartQuickHeight();
-  $(window).on('resize', setCartQuickHeight);
+  window.addEventListener('load', setCartQuickHeight);
+  requestAnimationFrame(setCartQuickHeight);
 
+  // 장바구니 토글
   function toggleCartBg() {
     if ($(window).width() <= 1024 && $('#cartSidebar').hasClass('open')) {
       $('.m-cart-bg').show();
@@ -207,14 +209,20 @@ $(document).ready(function(){
     $('#mCartCloseBtn').show();
     $('.m-cart-bg').show();
     $('#mCartQuickBtn').hide();
+    $('.pg1').hide();
   });
   $('.m-cart-bg, #mCartCloseBtn').click(function(){
     $('#cartSidebar').removeClass('open');
     $('#mCartCloseBtn').hide();
     $('.m-cart-bg, #mCartCloseBtn').hide();
+    $('.pg1').hide();
     setTimeout(function(){
       $('#mCartQuickBtn').show();
     },100);
+  });
+
+  $('#mTotalViewBtn').click(function(){
+    $('.pg1').slideToggle('fast');
   });
 
   // 푸터 toggle

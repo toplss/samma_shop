@@ -144,7 +144,8 @@
                 <p class="pm-wrap">
                     <button type="button" class="sit_qty_minus" ><img src="{{ asset('images/icon/minus.svg') }}"></button>
                     <span id="numberUpDown">
-                        <input type="text" name="ct_qty" class="ct_qty"  value="{{ $min_cart_ct_qty }}" readonly>
+                      <input type="hidden" name="min_ct_qty" class="min_ct_qty"  value="{{ $min_cart_ct_qty }}" readonly>
+                      <input type="text" name="ct_qty" class="ct_qty"  value="{{ $min_cart_ct_qty }}" readonly>
                     </span>
                     <button type="button" class="sit_qty_plus" ><img src="{{ asset('images/icon/plus.svg') }}"></button>
                 </p>
@@ -155,8 +156,16 @@
             </li>
             <li class="prd-info">
                 @if($row['it_gubun'] !== 'box')
+                <input type="hidden" class="it_gubun" value="{{ $row['it_gubun'] }}" />
                 <input type="hidden" class="buy_box_qty" value="{{ $box_min_qty }}" />
+                <input type="hidden" class="it_box_sale_pcs" value="{{ $row['it_box_sale_pcs'] }}" />
+                <input type="hidden" class="it_box_sale_pack" value="{{ $row['it_box_sale_pack'] }}" />
+                <input type="hidden" class="it_box_sale_tot" value="{{ $row['it_box_sale_tot'] }}" />
+
+                @if ($row['it_box_sale_pcs'])
                 <button type="button" class="btn2" id="buy_box_btn" onclick="buy_box_qty(this)">박스구매</button>
+                @endif
+                
                 @endif
                 <p class="pin">
                     @php
@@ -173,21 +182,12 @@
 
             @if($activeMember)
             <li class="prd-price">
-                @if($row['it_cust_rate'] > 0)
-                <p class="price">{{ number_format($row['it_cust_price']) }}원</p>
-                @endif
-                <!-- <p class="discount"><b class="d-rate">20%</b>20,000원</p> -->
-
-                @php
-                $price = (int) str_replace(',', '', $row[$activeMember['field_it_price']] ?? 0);
-                $qty   = (int) $min_cart_ct_qty;
-
-                $row_list_field_it_price = $price * $qty;
-                @endphp
-
-                <input type="hidden" class="it_price" value="{{ $row_list_field_it_price }}" />
-                <p class="price field_it_price_">{{ number_format($row_list_field_it_price) }}원</p>
-            </li>
+                <x-mall.item-price
+                    :row="$row"
+                    :member="$activeMember"
+                    :qty="$min_cart_ct_qty"
+                />
+              </li>
             @endif
         </ul>
       @endforeach

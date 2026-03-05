@@ -64,7 +64,7 @@ class MyCartController extends Controller
                 $service = app(ShopOrderService::class);
 
                 $order = ShopOrderModel::where('od_id', $od_id)
-                    ->lockForUpdate()
+                    // ->lockForUpdate()
                     ->select('od_id', 'od_delivery_step', 'od_status')
                     ->first();
             
@@ -78,7 +78,7 @@ class MyCartController extends Controller
 
                 $cart_cnt = ShopCart::where('od_id', $od_id)
                     ->whereNotIn('ct_status', ['쇼핑'])
-                    ->lockForUpdate()
+                    // ->lockForUpdate()
                     ->count();
             
                 if ($cart_cnt == 0) {

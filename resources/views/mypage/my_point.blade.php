@@ -48,7 +48,7 @@
             $arr_po_action = [
               "od_use"=>"주문",
               "od_cancel"=>"주문취소",
-              "pt_charge"=>"입금",
+              "pt_charge"=>"주문",
               "pt_buy_charge"=>"충전",
               ];
 

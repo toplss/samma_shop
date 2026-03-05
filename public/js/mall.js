@@ -112,6 +112,9 @@ $(document).ready(function(){
       },      
     ]
   });
+  $('.sale-item-tab li').click(function(){
+    $(this).addClass('active').siblings().removeClass('active');
+  });
 
   if ($(window).width() <= 1024) {
     $('.m-pop-slide').slick({
@@ -281,6 +284,16 @@ $(document).ready(function(){
     $(this).find('span').text(isOpen ? '상세정보 접기' : '상세정보 펼쳐보기');
   });
 
+  // 품절일때 (상품리스트)
+  $('.prd-box').each(function () {
+    if ($(this).find('.prd-img').hasClass('sold-out')) {
+      $(this).find('.prd-check .cart_it_id')
+        .prop('disabled', true)
+        .prop('checked', false); // 혹시 체크되어 있으면 해제
+      $(this).find('#buy_box_btn')
+        .prop('disabled', true).css('opacity','0.4');
+    }
+  });
 
 
   // as 접수

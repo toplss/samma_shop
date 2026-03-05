@@ -58,7 +58,7 @@ class ShopOrderService
                             if ($existItem) 
                             {
                                 ShopCart::where('ct_id', $existItem->ct_id)
-                                ->lockForUpdate()
+                                // ->lockForUpdate()
                                 ->update([
                                     'ct_qty'   => DB::raw('ct_qty + '.(int)$row->ct_qty),
                                     'ct_qty_box' => DB::raw('ct_qty_box + '.(int)$row->ct_qty_box),
@@ -114,7 +114,7 @@ class ShopOrderService
                             if ($existItem) 
                             {
                                 ShopCart::where('ct_id', $existItem->ct_id)
-                                ->lockForUpdate()
+                                // ->lockForUpdate()
                                 ->update([
                                     'ct_qty'   => DB::raw('ct_qty + '.(int)$row->ct_qty),
                                     'ct_qty_box' => DB::raw('ct_qty_box + '.(int)$row->ct_qty_box),
@@ -181,7 +181,7 @@ class ShopOrderService
         $cart = DB::table('g5_shop_cart')
         ->where('ct_id', $ct_id)
         ->select('it_id', 'ct_qty_tot')
-        ->lockForUpdate()
+        // ->lockForUpdate()
         ->first();
 
         if ($cart->ct_qty_tot > 0 && $cart->it_id) {

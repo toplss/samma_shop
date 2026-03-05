@@ -302,6 +302,11 @@ class PaymentService
             }
         } 
 
+        // 회원 레벨이 없는 경우
+        if (!$member['level_ca_id2']) {
+            $member['level_ca_id2'] = '1002'; // 본사후불
+        }
+
 
         if ($request->payment_type == '선불' && $request->payable > 0 && ($request->od_settle_case == '충전금' || $request->od_settle_case == '적립금' || $request->od_settle_case == '충전금+적립금') ) {
             return false;
@@ -481,6 +486,8 @@ class PaymentService
             'pt_delivery' => (integer) $request->deilivery_cost,
             'pt_sales_delivery' => $pt_sales_delivery,
             'pt_subtotal'    => $sub_total,
+            'pt_charge'     => $request->input('input_od_temp_point', 0),
+            'pt_reserve'     => $request->input('input_od_temp_point_reserve', 0),
             'pt_cur_charge'  => $member['mb_point'] - $request->input('input_od_temp_point', 0),
             'pt_cur_reserve' => $member['mb_point_reserve'] - $request->input('input_od_temp_point_reserve', 0),
             'pt_cur_balance' => $member['mb_point_balance'] + ($request->payment_type === '후불' ? $request->payment : 0),
@@ -534,7 +541,7 @@ class PaymentService
         if (!empty($updateData)) {
             DB::table('tb_member')
                 ->where('mb_code', session('ss_mb_code'))
-                ->lockForUpdate()
+                // ->lockForUpdate()
                 ->update($updateData);
         }
     }
@@ -636,7 +643,7 @@ class PaymentService
         if (!empty($updateData)) {
             DB::table('tb_member')
                 ->where('mb_code', session('ss_mb_code'))
-                ->lockForUpdate()
+                // ->lockForUpdate()
                 ->update($updateData);
         }
     }
@@ -698,7 +705,7 @@ class PaymentService
         return DB::transaction(function() use($data) {
             $order = ShopOrderModel::where('od_id', $data['od_id'])
             ->where('mb_code', session('ss_mb_code'))
-            ->lockForUpdate()
+            // ->lockForUpdate()
             ->firstOrFail();
 
             $order->increment('od_receipt_price', $data['price']);

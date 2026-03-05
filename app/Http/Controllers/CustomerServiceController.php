@@ -244,7 +244,7 @@ class CustomerServiceController extends Controller
             )
             ->with('files')
             ->where('bd_num', $bd_num)
-            ->lockForUpdate()
+            // ->lockForUpdate()
             ->first();
 
             DB::table('tb_bbs_body')->where('bd_num', $bd_num)->increment('bd_view_count');
@@ -1224,6 +1224,11 @@ class CustomerServiceController extends Controller
             'contact_phone.required'    => '연락처를 입력해주세요.',
             'contact_contents.required' => '문의 내용을 입력해주세요.',
         ]);
+
+        //허니팟 체크 (봇 자동 등록 방지)
+        if ($request->filled('check_bot')) {
+            return redirect()->route('/');
+        }        
 
         $service = app(MallShopService::class);
         $member = $service->getMemberInfo(session('ss_mb_code'));

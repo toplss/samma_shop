@@ -112,9 +112,9 @@
 $(document).ready(function(){
     $('#simple_all').change(function() {
         if ($(this).is(':checked')) {
-            $('.cart_it_id').prop('checked', true);
+            $('.cart_it_id:not(:disabled)').prop('checked', true);
         } else {
-            $('.cart_it_id').prop('checked', false);
+            $('.cart_it_id:not(:disabled)').prop('checked', false);
         }
     });
 });

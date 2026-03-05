@@ -69,6 +69,8 @@ function cart_res(data) {
                         value: 1
                     })
                 );
+
+console.log(e);                
                 
                 if (e == '1') {
                     var add_field_1 = '';

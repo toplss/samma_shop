@@ -23,116 +23,105 @@
 
         @php 
 
-        /*
-        |--------------------------------------------
-        | 좌측 주문상태값 가공 START
-        |--------------------------------------------
-        */      
-        if ($row->current_gubun == '매출') {
+      /*
+      |--------------------------------------------
+      | 좌측 주문상태값 가공 START
+      |--------------------------------------------
+      */      
 
-          $delivery_step_status = [
-            '0'  => '입금대기',
-            '8'  => '완료',
-            '10' => '배송대기',
-            '85' => '배송대기',
-            '90' => '배송완료',
-            '99' => '배송완료',
-          ];      
+      $arr_gubun = explode('#', $row->current_gubun);
+      $current_gubun_cnt = !empty($arr_gubun) ? count($arr_gubun) : 0;
+      //가장 처음배열의 상태값으로..
+      $current_gubun = $arr_gubun[0];
+      
+      if ($current_gubun == '매출') {
+
+        $delivery_step_status = [
+          '0'  => '입금대기',
+          '8'  => '완료',
+          '10' => '배송대기',
+          '85' => '배송대기',
+          '90' => '배송완료',
+          '99' => '배송완료',
+        ];      
+
+        $str_status = $delivery_step_status[$row->od_delivery_step] ?? '';
+
+      } elseif ($current_gubun == '반품채권' || $current_gubun == '결품' || $current_gubun == '결품채권' || $current_gubun == '기사파손' || $current_gubun == '물류파손' || $current_gubun == '잔액이관') {
+        
+        $str_status = '';
+
+      } else{
+
+        $delivery_step_status = [
+          '0'  => '입금대기',
+          '8'  => '완료',
+          '10' => '대기',
+          '85' => '대기',
+          '90' => '완료',
+          '99' => '완료',
+        ];
+
+        $str_status = $delivery_step_status[$row->od_delivery_step] ?? '';
+
+      }
 
 
-        } elseif ($row->current_gubun == '결품' || $row->current_gubun == '물류파손' || $row->current_gubun == '기사파손' || $row->current_gubun == '장비입고' || $row->current_gubun == '장비A/S') {
-          
-          $delivery_step_status = [
-            '0'  => '',
-            '8'  => '',
-            '10' => '',
-            '85' => '',
-            '90' => '',
-            '99' => '',
-          ];
+      /*
+      |--------------------------------------------
+      | 좌측 주문상태값 가공 END
+      |--------------------------------------------
+      */            
 
-        } else{
 
-          $delivery_step_status = [
-            '0'  => '입금대기',
-            '8'  => '완료',
-            '10' => '대기',
-            '85' => '대기',
-            '90' => '완료',
-            '99' => '완료',
-          ];
+      
+      /*
+      |--------------------------------------------
+      | 우측 입금 상태값 가공 START
+      |--------------------------------------------
+      */            
 
-        }
+      $color = '';
 
-        $arr_gubun = explode('#', $row->current_gubun);
-        $current_gubun_cnt = !empty($arr_gubun) ? count($arr_gubun) : 0;
+      //선불, 후불 주문 구분
+      $payment_type = '';
+      if (isset($row->level_ca_id2)) {
+          if (strlen($row->level_ca_id2) == 4) {
+              if (substr($row->level_ca_id2, -1) == '1') $payment_type = '선불';
+              if (substr($row->level_ca_id2, -1) == '2') $payment_type = '후불';
+          }
+      }        
 
-        //가장 처음배열의 상태값으로..
-        $current_gubun = $arr_gubun[0];      
+      $str_od_status = '';
+      if (str_contains($current_gubun, '매출') || $current_gubun == '충전금구매') {
 
-        if ( $current_gubun == '기사파손' || $current_gubun == '물류파손' || $current_gubun == '잔액이관') {
-          $str_status = '';
+        if ($row->od_delivery_step > 0) {
+          $str_od_status = '입금완료';
         } else {
-          $str_status = $delivery_step_status[$row->od_delivery_step] ?? '';
+          $str_od_status = '입금대기';
+          $color = 'txt-red';
         }
 
-        /*
-        |--------------------------------------------
-        | 좌측 주문상태값 가공 END
-        |--------------------------------------------
-        */                    
+        //후불주문인 경우 예금입금을 제외하고 모두 '여신' 으로 표기
+        if ($payment_type == '후불') {
+          $str_od_status = '여신';
+        }
 
+      } else {
 
-        /*
-        |--------------------------------------------
-        | 우측 입금 상태값 가공 START
-        |--------------------------------------------
-        */            
-
-        $color = '';
-
-        //선불, 후불 주문 구분
-        $payment_type = '';
-        if (isset($row->level_ca_id2)) {
-            if (strlen($row->level_ca_id2) == 4) {
-                if (substr($row->level_ca_id2, -1) == '1') $payment_type = '선불';
-                if (substr($row->level_ca_id2, -1) == '2') $payment_type = '후불';
-            }
-        }        
-
-        $str_od_status = '';
-
-
-
-        if (str_contains($row->current_gubun, '매출') || $row->current_gubun == '충전금구매') {          
-
-          if ($row->od_delivery_step > 0) {
-            $str_od_status = '입금완료';
-          } else {
-            $str_od_status = '입금대기';
-            $color = 'txt-red';
-          }
-
-          //후불주문인 경우 예금입금을 제외하고 모두 '여신' 으로 표기
-          if ($payment_type == '후불') {
-            $str_od_status = '여신';
-          }
-
+        if ($current_gubun == '반품' || $current_gubun == '취소') {
+            $str_od_status = $current_gubun . '완료';
         } else {
-
-          if ($current_gubun == '반품' || $current_gubun == '취소') {
-              $str_od_status = $current_gubun . '완료';
-          } else {
-              $str_od_status = $current_gubun;
-          }
-
+            $str_od_status = $current_gubun;
         }
 
-        /*
-        |--------------------------------------------
-        | 우측 입금 상태값 가공 END
-        |--------------------------------------------
-        */                  
+      }
+
+      /*
+      |--------------------------------------------
+      | 우측 입금 상태값 가공 END
+      |--------------------------------------------
+      */                  
 
 
         @endphp
@@ -219,17 +208,25 @@
                 "2"=>"<span class='return_x'>반품불가</span>"
               );
             @endphp
-            {!! $it_storage_str[$row->it_storage] !!}<span class="return_o">반품가능</span>
+            {!! $it_storage_str[$row->it_storage] !!}{!! $it_return_str[$row->it_return] !!}
           </td>
           <td>{{ number_format($row->ct_price * $row->ct_qty) }}</td>
+
           @php
-            if ($row->ct_cate != '납품') {
+            $ct_cate = $row->ct_cate;
+
+            if ($ct_cate != '납품') {
               $color = 'txt-blue';
             } else {
               $color = '';
             }
+
+            //결품입금을 결품채권으로 용어 변경됨
+            if ($ct_cate == '결품입금') {
+              $ct_cate = '결품채권';
+            }
           @endphp
-          <td class="{{ $color }}">{{ $row->ct_cate }}</td>
+          <td class="{{ $color }}">{{ $ct_cate }}</td>
         </tr>
         @endforeach
         <!-- 반복 끝 -->

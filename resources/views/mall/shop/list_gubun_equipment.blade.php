@@ -80,9 +80,10 @@
                 @else
                 <li class="prd-img  {{ $sold_out ? 'sold-out' : '' }}" onclick="location.href = '/mall/shop/view?it_id={{ $it_id }}'; "><img src="{{ asset('images/common/no_image.gif') }}"></li>
                 @endif
-                <li class="Qua {{ $sold_out ? 'sold-out' : '' }}">
+                <li class="Qua-equip {{ $sold_out ? 'sold-out' : '' }}">
                     @if($activeMember)
                     <p class="Qua-call"><img src="{{ asset('images/icon/call.svg') }}">전화문의</p>
+                    <p class="Qua-view" onclick="location.href = '/mall/shop/view?it_id={{ $it_id }}';"><img src="{{ asset('images/icon/view.svg') }}">상세보기</p>
                     @else
                     <p class="Qua-login">로그인 후 이용가능합니다.</p>
                     @endif

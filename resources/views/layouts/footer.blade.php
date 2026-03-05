@@ -70,6 +70,7 @@
 	<button type="button" id="contactBtn"><img src="{{ asset('images/common/sm_icon.svg') }}"></button>
 	<div class="contact_wrap">
 		<form name="form_contact" id="form_contact" method="post" action="{{ route('contact_us') }}">
+			<input type="text" name="check_bot" id="check_bot" style="display:none">
 			@csrf
 			<div class="flex-between">
 				<h3 class="flex"><img src="{{ asset('images/common/sm_icon.svg') }}">문의하기</h3>

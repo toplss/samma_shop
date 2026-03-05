@@ -57,6 +57,10 @@
           @endphp
 
           <td class="cart-table-title">
+            <input type="hidden" class="it_gubun" value="{{ $row['it_gubun'] }}" />
+            <input type="hidden" class="it_box_sale_pcs" value="{{ $row['it_box_sale_pcs'] }}" />
+            <input type="hidden" class="it_box_sale_pack" value="{{ $row['it_box_sale_pack'] }}" />
+            <input type="hidden" class="it_box_sale_tot" value="{{ $row['it_box_sale_tot'] }}" />
             <div>
               @if(file_exists(public_path($image_url)) && $row['it_img1'])
               <img src="{{ asset($image_url) }}">
@@ -64,7 +68,7 @@
               <img src="{{ asset('images/common/no_image.gif') }}">
               @endif
               <h6 class="my_cart_it_name">
-                {{ $row['it_name'] }}  
+                <span class="my_cart_it_name_short">{{ $row['it_name'] }}</span>
                 <i>({{ $row['it_basic'] }})</i>
                 @if($row['it_type_label'])<span class="hide-820 {{ $item_label[$row['it_type_label']] }}">{{ $row['it_type_label'] }}</span>@endif
                 <p class="show-820">
@@ -162,20 +166,36 @@
 <script>
 $(document).ready(function() {
 	$(document).on('click', '.sit_delete_btn', function(){
-        var it_id  = $(this).data('it_id');
 
-        $.post("/mall/proc_query_cart",{
-            mode:"cart_delete",
-            it_id  : it_id,
-            path : window.location.pathname
-        },function(result){
-		      
-          cart_res(result);
+    Swal.fire({
+        title: '삭제 확인',
+        text: '선택하신 상품을 삭제 하시겠습니까?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '확인',
+        cancelButtonText: '취소'
+    }).then((result) => {
 
-          setting_table(result.data);
+        if (result.isConfirmed) {
 
-        }, 'json');
+            var it_id = $(this).data('it_id');
+
+            $.post("/mall/proc_query_cart", {
+                mode: "cart_delete",
+                it_id: it_id,
+                path: window.location.pathname
+            }, function(result){
+
+                cart_res(result);
+                setting_table(result.data);
+
+            }, 'json');
+
+        }
+
     });
+
+  });
 
 
     $(document).on('click', '.cart_qty_plus', function(){
@@ -284,13 +304,28 @@ $(document).ready(function() {
 function cartbuy_box_qty(e) {
   var tr = $(e).closest('tr');
   var it_id = tr.data('it_id');
-  var it_name = tr.find('.my_cart_it_name').text();
+  // var it_name = tr.find('.my_cart_it_name').text();
+  var it_name = tr.find('.my_cart_it_name_short').text();
+  var it_gubun = tr.find('.it_gubun').val();
   var qty = tr.find('.cart_buy_box_qty').val();
+
+  var message = '';
+  if (it_gubun == 'pcs') {
+    var pcs = tr.find('.it_box_sale_tot').val();
+    message = `<span style="color:#e02f30">${it_name}</span><br>${pcs}입*1박스로 구매 하시겠습니까?`;
+  }
+  if (it_gubun == 'pack') {
+    var pcs = tr.find('.it_box_sale_pcs').val();
+    var pack = tr.find('.it_box_sale_pack').val();
+    var total = tr.find('.it_box_sale_tot').val();
+    message = `<span style="color:#e02f30">${it_name}</span><br>${pcs}입*${pack}팩*${total}개*1박스로 구매 하시겠습니까?`;
+  }
 
 
   Swal.fire({
     title: '구매 확인',
-    text: `상품 ${it_name}을(를) ${qty}개 구매하시겠습니까?`,
+    // text: `${it_name}을(를) ${qty}개 구매하시겠습니까?`,
+    html: message,
     icon: 'question',
     showCancelButton: true,
     confirmButtonText: '구매',
@@ -308,6 +343,7 @@ function cartbuy_box_qty(e) {
       }, 'json');
     }
   });
+
 }
 
 
@@ -356,12 +392,15 @@ function setting_table(data) {
       let img_root   = '/images/item/';
       const activeMember = <?= json_encode($activeMember) ?>;
 
+      let index = 0;
       $.each(items.cart_items, function(e) {
           var cartList = items.cart_items[e];
-          let index = 0;
+          
           
           $.each(cartList, function(i, val) {
-              tbody_html += '<tr>';
+            
+              // tbody_html += '<tr>';
+                tbody_html += `<tr data-it_id="${val.it_id}">`;
 
               index++;
               let image_url = img_root + val.it_img1;
@@ -404,10 +443,15 @@ function setting_table(data) {
               </td>
               <td class="cart-table-num hide-820">${index}</td>
               <td class="cart-table-title">
+                <input type="hidden" class="it_gubun" value="${val.it_gubun}" />
+                <input type="hidden" class="it_box_sale_pcs" value="${val.it_box_sale_pcs}" />
+                <input type="hidden" class="it_box_sale_pack" value="${val.it_box_sale_pack}" />
+                <input type="hidden" class="it_box_sale_tot" value="${val.it_box_sale_tot}" />                
+
                 <div>
                     <img src="${image_url}">
                     <h6>
-                      ${val.it_name}
+                      <span class="my_cart_it_name_short">${val.it_name}</span>
                       <p class="show-820">
                         <span class="${tempArr[val.it_storage]}">${val.it_storage_label}</span>
                         <span class="${tempClass}">${val.it_return_label}</span>

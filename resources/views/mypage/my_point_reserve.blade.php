@@ -28,15 +28,12 @@
           <th>날짜</th>
           <th>구분</th>
           <th>적립</th>
+          <th>채권</th>
           <th>사용</th>
-          {{-- <th>테스트용 임시</th> --}}
           {{-- <th>적립금잔액</th> --}}
         </tr>
       </thead>
       <tbody>
-
-
-{{-- @dd($items); --}}
 
         @foreach($items as $index => $row)
 
@@ -45,47 +42,58 @@
               $gubun = '잔액';
             } elseif ($row->po_point_type == 'increase'){
               $gubun = '적립';
+            } elseif ($row->po_point_type == 'bond'){
+              $gubun = '채권';
             } elseif ($row->po_point_type == 'decrease'){
-              $gubun = '사용';
+              $gubun = '사용';              
             }
 
-
-// dd($row->po_action);            
+            //주문삭제건 건너띄기
+            if ($row->po_action == 'od_del') {
+                continue;
+            }
 
             //적립금 상세내역 가공
             $comment = '';
             $actions = explode('#', $row->po_action);
             $action_cnt = !empty($actions) ? count($actions) : 0;
 
-
-
             foreach ($actions as $key => $action) {
 
               $str_po_action = [
                 "od_use"=>"주문",
                 "od_cancel"=>"주문취소",
+                "pt_cancel"=>"취소",
+                "pt_return"=>"반품",
+                "pt_return_receivable"=>"반품채권",
                 "pt_outofstock"=>"결품",
+                "pt_outofstock_deposit"=>"결품채권",
                 "pt_damage_staff"=>"기사파손",
                 "pt_damage_logistic"=>"물류파손",
-                "pt_return"=>"반품",
-                "pt_cancel"=>"취소",
-                "pt_reserve"=>"입금",
+                "pt_incentive"=>"장려금",
+                "pt_dc"=>"DC",
+                "pt_reserve"=>"주문",
                 "pt_buy_reserve"=>"충전",
                 "modify"=>"잔액", //잔액조정
-                ];
+              ];
+              
 
-                $amount_po_action = [
+              $amount_po_action = [
                 "od_use"=>$row->po_point,
                 "od_cancel"=>$row->po_point,
+                "pt_cancel"=>$row->pt_cancel,
+                "pt_return"=>$row->pt_return,
+                "pt_return_receivable"=>$row->pt_return_receivable,
                 "pt_outofstock"=>$row->pt_outofstock,
+                "pt_outofstock_deposit"=>$row->pt_outofstock_deposit,
                 "pt_damage_staff"=>$row->pt_damage_staff,
                 "pt_damage_logistic"=>$row->pt_damage_logistic,
-                "pt_return"=>$row->pt_return,
-                "pt_cancel"=>$row->pt_cancel,
+                "pt_incentive"=>$row->pt_incentive,
+                "pt_dc"=>$row->pt_dc,
                 "pt_reserve"=>$row->pt_reserve,
                 "pt_buy_reserve"=>$row->pt_buy_reserve,
                 "modify"=>$row->pt_buy_reserve, //잔액조정
-                ];
+              ];
 
               //여러 건인 경우 제일 처음건으로 표기
               if ($key > 1) {
@@ -94,12 +102,14 @@
                   $po_action = $str_po_action[$action] ?? '';
               }
 
-// dd($action)              ;
 
-              $comment .= '<li>
-                            <span>'. $str_po_action[$action] .' ' . $gubun . '</span>
-                            <b>' . number_format($amount_po_action[$action]) . '원</b>
-                            </li>';
+              $comment .= "<li>
+                  <span>" 
+                  . $str_po_action[$action] . " " 
+                  . (($gubun == '잔액' || $gubun == '채권') ? '' : $gubun)  //반품채권, 결품채권은 이미 채권이라는 단어가 포함되어 있으므로 $gubun값은 빈값으로 처리함
+                  . "</span>
+                  <b>" . number_format($amount_po_action[$action]) . "원</b>
+              </li>";
 
             }
 
@@ -109,10 +119,11 @@
           <td>{{ \Carbon\Carbon::parse($row->reg_date)->format('Y-m-d') }}</td>
           <td>
             <span class="pt1" onclick='javascript:point_reserve_showDetail(@json($comment));'>
-              {{ ($po_action == '잔액') ? '' : $po_action }} {{ $gubun }} {{ ($action_cnt > 1) ? '외 ' . ($action_cnt - 1) . '건' : '' }}
+              {{ ($po_action == '잔액') ? '' : $po_action }} {{ ($gubun == '채권') ? '' : $gubun }} {{ ($action_cnt > 1) ? '외 ' . ($action_cnt - 1) . '건' : '' }}
             </span>
           </td>
           <td class="{{ ($gubun == '적립' or $gubun == '잔액') ? 'txt-red' : '' }}">{{ ($gubun == '적립' or $gubun == '잔액') ? number_format($row->change_point) . '원' : '-' }}</td>
+          <td class="{{ ($gubun == '채권') ? 'txt-blue' : '' }}">{{ ($gubun == '채권') ? number_format($row->change_point) . '원' : '-' }}</td>
           <td class="{{ ($gubun == '사용') ? 'txt-blue' : '' }}">{{ ($gubun == '사용') ? number_format($row->change_point) . '원' : '-' }}</td>
 
         </tr>

@@ -27,7 +27,13 @@
       | 좌측 주문상태값 가공 START
       |--------------------------------------------
       */      
-      if ($row->current_gubun == '매출') {
+
+      $arr_gubun = explode('#', $row->current_gubun);
+      $current_gubun_cnt = !empty($arr_gubun) ? count($arr_gubun) : 0;
+      //가장 처음배열의 상태값으로..
+      $current_gubun = $arr_gubun[0];
+      
+      if ($current_gubun == '매출') {
 
         $delivery_step_status = [
           '0'  => '입금대기',
@@ -38,17 +44,11 @@
           '99' => '배송완료',
         ];      
 
+        $str_status = $delivery_step_status[$row->od_delivery_step] ?? '';
 
-      } elseif ($row->current_gubun == '결품' || $row->current_gubun == '물류파손' || $row->current_gubun == '기사파손' || $row->current_gubun == '장비입고' || $row->current_gubun == '장비A/S') {
+      } elseif ($current_gubun == '반품채권' || $current_gubun == '결품' || $current_gubun == '결품채권' || $current_gubun == '기사파손' || $current_gubun == '물류파손' || $current_gubun == '잔액이관') {
         
-        $delivery_step_status = [
-          '0'  => '',
-          '8'  => '',
-          '10' => '',
-          '85' => '',
-          '90' => '',
-          '99' => '',
-        ];
+        $str_status = '';
 
       } else{
 
@@ -61,18 +61,10 @@
           '99' => '완료',
         ];
 
-      }
-
-      $arr_gubun = explode('#', $row->current_gubun);
-      $current_gubun_cnt = !empty($arr_gubun) ? count($arr_gubun) : 0;
-      //가장 처음배열의 상태값으로..
-      $current_gubun = $arr_gubun[0];      
-
-      if ( $current_gubun == '기사파손' || $current_gubun == '물류파손' || $current_gubun == '잔액이관') {
-        $str_status = '';
-      } else {
         $str_status = $delivery_step_status[$row->od_delivery_step] ?? '';
+
       }
+
 
       /*
       |--------------------------------------------
@@ -80,6 +72,7 @@
       |--------------------------------------------
       */            
 
+      //상품갯수
       $except_ct_cnt = $row->ct_cnt - 1;
       $except_ct_cnt = ($except_ct_cnt > 0) ? $except_ct_cnt : '';
 
@@ -99,7 +92,7 @@
       }        
 
       $str_od_status = '';
-      if (str_contains($row->current_gubun, '매출') || $row->current_gubun == '충전금구매') {
+      if (str_contains($current_gubun, '매출') || $current_gubun == '충전금구매') {
 
         if ($row->od_delivery_step > 0) {
           $str_od_status = '입금완료';
@@ -194,17 +187,23 @@
         @if(($row->sum_pt_return))              <li><u>반품</u><span id="amt_pt_return">{{ number_format($row->sum_pt_return).'원' }}</span></li>@endif
         @if(($row->sum_pt_return_receivable))   <li><u>반품채권</u><span id="pt_return_receivable">{{ number_format($row->sum_pt_return_receivable).'원' }}</span></li>@endif
         @if(($row->sum_pt_outofstock))          <li><u>결품</u><span id="amt_pt_outofstock">{{ number_format($row->sum_pt_outofstock).'원' }}</span></li>@endif
-        @if(($row->sum_pt_outofstock_deposit))  <li><u>결품입금</u><span id="amt_pt_outofstock_deposit">{{ number_format($row->sum_pt_outofstock_deposit).'원' }}</span></li>@endif
+        @if(($row->sum_pt_outofstock_deposit))  <li><u>결품채권</u><span id="amt_pt_outofstock_deposit">{{ number_format($row->sum_pt_outofstock_deposit).'원' }}</span></li>@endif
         @if(($row->sum_pt_damage_staff))        <li><u>기사파손</u><span id="amt_pt_damage_staff">{{ number_format($row->sum_pt_damage_staff).'원' }}</span></li>@endif
         @if(($row->sum_pt_damage_logistic))     <li><u>물류파손</u><span id="amt_pt_damage_logistic">{{ number_format($row->sum_pt_damage_logistic).'원' }}</span></li>@endif
         @if(($row->pt_refund))                  <li><u>환불처리</u><span id="amt_pt_refund">{{ number_format($row->pt_refund).'원' }}</span></li>@endif
         @if(($row->pt_refund_done))             <li><u>환불금액</u><span id="amt_pt_refund_done">{{ number_format($row->pt_refund_done).'원' }}</span></li>@endif
       </ul>
       <ul class="odr-list3">
-        <li><u>매출합계</u><span id="amt_pt_subtotal">{{ ($row->sum_pt_subtotal) ? number_format($row->sum_pt_subtotal).'원' : '0원' }}</span></li>
-        <li><u>충전금잔액</u><span id="amt_pt_cur_charge">{{ ($row->pt_cur_charge) ? number_format($row->pt_cur_charge).'원' : '0원' }}</span></li>
-        <li><u>적립금잔액</u><span id="amt_pt_cur_reserve">{{ ($row->pt_cur_reserve) ? number_format($row->pt_cur_reserve).'원' : '0원' }}</span></li>
+         
+      @if($row->od_delivery_step >= 90)
+        @if($payment_type == '선불')
+          <li><u>매출합계</u><span id="amt_pt_subtotal">{{ ($row->sum_pt_subtotal) ? number_format($row->sum_pt_subtotal).'원' : '0원' }}</span></li>
+          <li><u>충전금잔액</u><span id="amt_pt_cur_charge">{{ ($row->pt_cur_charge) ? number_format($row->pt_cur_charge).'원' : '0원' }}</span></li>
+          <li><u>적립금잔액</u><span id="amt_pt_cur_reserve">{{ ($row->pt_cur_reserve) ? number_format($row->pt_cur_reserve).'원' : '0원' }}</span></li>
+        @endif
         <li><u>채권잔액</u><span id="amt_pt_cur_balance">{{ ($row->pt_cur_balance) ? number_format($row->pt_cur_balance).'원' : '0원' }}</span></li>
+      @endif
+
       </ul>
 
     </div>

@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Debugbar;
+use Illuminate\Database\QueryException;
+
 
 class ShopCartApi extends Controller
 {
@@ -120,6 +122,26 @@ class ShopCartApi extends Controller
                     'siteInfo' => $this->getSiteInfo(),
                 ],
                 'res' => $res ?? ''
+            ]);
+        
+        } catch (QueryException $e) {
+            Log::error('Database Query Error: ' . $e->getMessage());
+
+            return $this->convertResponseData([
+                'status'=> 'fail', 
+                'message' => '상품 담기에 실패했습니다. 잠시 후 다시 시도하시거나 장바구니를 초기화해주세요.',
+                'data' => [
+                    'cartList'       => $cartList = $this->getCartList($request, $member),
+                    'member'         => $member,
+                    'infomation'     => $service->payInfomation($member),
+                    'deilivery_cost' => $this->deliveryCost(
+                        $member, 
+                        array_sum(array_column($cartList, 'pt_sales'))
+                    ),
+                    'waitInfo' => $this->wait_infos($member),
+                    'siteInfo' => $this->getSiteInfo(),
+                ],
+                'res' => ''
             ]);
 
         } catch (\Exception $e) {
@@ -268,7 +290,8 @@ class ShopCartApi extends Controller
             })
             ->where('ct_status', '쇼핑')
             ->select($selected)
-            ->orderByRaw('it_soldout = 1 DESC')
+            ->orderByRaw('it_soldout = 1 DESC ')
+            ->orderByRaw('ct_id DESC ')
             ->get()->toArray();
             
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -342,7 +365,7 @@ class ShopCartApi extends Controller
                 $cnt_exists = ShopCart::where('mb_code', $mb_code)
                 ->where('it_id', $it_id)
                 ->where('ct_status', '쇼핑')
-                ->lockForUpdate()
+                // ->lockForUpdate()
                 ->exists();
 
                 // 해당 상품이 존재하면 업데이트
@@ -519,7 +542,7 @@ class ShopCartApi extends Controller
                 $cart_exists = ShopCart::where('mb_code', $mb_code)
                 ->where('ct_cate', '충전금구매')
                 ->where('ct_status', '쇼핑')
-                ->lockForUpdate()
+                // ->lockForUpdate()
                 ->exists();
 
                 if ($cart_exists) {
@@ -789,7 +812,7 @@ class ShopCartApi extends Controller
                 'si.agency_it_buy_min_qty',
                 'si.it_buy_min_qty',
             )
-            ->lockForUpdate()
+            // ->lockForUpdate()
             ->first();
 
             if (!$cartItem) {
